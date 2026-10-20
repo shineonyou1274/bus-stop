@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#BDE3FF">
+<title>버스 타기 연습 | 김해은혜학교</title>
+<style>
+:root{
+  --ink:#1F2A44; --yellow:#FFD400; --orange:#FF9F1C; --green:#21B573; --red:#E8505B; --blue:#2E86DE;
+  --r:22px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{
+  font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;
+  color:var(--ink);
+  background:linear-gradient(160deg,#BDE3FF 0%,#E3F6FF 48%,#D3F4E2 100%);
+  overflow:hidden; user-select:none; -webkit-user-select:none; touch-action:manipulation;
+}
+button{font:inherit;color:inherit;cursor:pointer}
+svg{display:block}
+#app{
+  height:100vh; height:100dvh; display:flex; flex-direction:column; gap:10px;
+  padding:max(10px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));
+}
+
+/* ---------- 상단 ---------- */
+.top{display:flex;align-items:center;gap:10px;flex:none}
+.tbtn{
+  min-width:66px;height:66px;border:0;border-radius:18px;background:#fff;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  font-weight:800;font-size:14px;box-shadow:0 4px 0 rgba(31,42,68,.15);padding:6px 8px;flex:none;
+}
+.tbtn svg{width:30px;height:30px}
+.tbtn > span:not(.tl){display:block;line-height:0}
+.tbtn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(31,42,68,.15)}
+.tbtn.on{background:var(--yellow)}
+.tbtn.off{background:#D9DEE6;color:#6B7486}
+.steps{flex:1;display:flex;gap:8px;list-style:none;margin:0;padding:0;justify-content:center;min-width:0}
+.steps li{
+  flex:1 1 0;max-width:180px;min-width:0;display:flex;align-items:center;gap:6px;
+  background:rgba(255,255,255,.55);border-radius:16px;padding:6px 10px;font-weight:900;font-size:16px;
+  opacity:.7;position:relative;border:4px solid transparent;
+}
+.steps li .si{width:40px;height:40px;flex:none}
+.steps li .st{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.steps li.now{background:#fff;opacity:1;border-color:var(--orange)}
+.steps li.done{background:#C9F2DA;opacity:1}
+.steps li.done::after{content:"✔";position:absolute;right:-6px;top:-8px;background:var(--green);color:#fff;border-radius:50%;width:24px;height:24px;font-size:14px;display:grid;place-items:center}
+.top.home .steps{visibility:hidden}
+
+/* ---------- 화면 ---------- */
+.screen{flex:1;min-height:0;display:none}
+.screen.show{display:grid}
+
+/* 시작 화면 */
+.start{overflow:auto;place-items:center;padding:6px}
+.startCard{width:100%;max-width:1200px;display:grid;grid-template-columns:1fr 1fr;gap:clamp(12px,3vmin,36px);align-items:center}
+.heroPic{background:#fff;border-radius:32px;padding:10px;box-shadow:0 8px 0 rgba(31,42,68,.12)}
+.heroPic svg{width:100%;height:auto}
+.startSide{display:flex;flex-direction:column;gap:clamp(10px,2vmin,20px)}
+.startSide h1{margin:0;font-size:clamp(34px,6.4vmin,76px);line-height:1.1;font-weight:900}
+.startSide h1 small{display:block;font-size:.42em;color:#3B6FB6;margin-top:6px}
+.route{display:flex;flex-wrap:wrap;align-items:center;gap:6px;background:rgba(255,255,255,.75);border-radius:20px;padding:10px}
+.go{
+  border:0;border-radius:28px;background:var(--green);color:#fff;font-weight:900;
+  font-size:clamp(28px,5vmin,56px);display:flex;align-items:center;justify-content:center;gap:16px;
+  min-height:clamp(84px,13vmin,140px);padding:10px 28px;box-shadow:0 8px 0 #158A55;
+}
+.go svg{width:1.4em;height:1.4em}
+.go:active{transform:translateY(5px);box-shadow:0 3px 0 #158A55}
+.go.alt{background:var(--blue);box-shadow:0 8px 0 #1D5F9F}
+.pickTitle{font-weight:900;font-size:clamp(16px,2.4vmin,24px);margin:4px 0 -4px}
+.stepPick{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.stepPick button{
+  border:0;border-radius:18px;background:#fff;padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;
+  font-weight:900;font-size:clamp(13px,1.9vmin,20px);box-shadow:0 4px 0 rgba(31,42,68,.15);min-height:96px;
+}
+.stepPick button svg{width:clamp(40px,7vmin,70px);height:auto}
+.stepPick button:active{transform:translateY(3px)}
+.note{margin:0;font-size:clamp(13px,1.8vmin,18px);font-weight:700;color:#5B6478;background:#FFF6CC;border-radius:14px;padding:8px 12px}
+
+/* 연습 화면 */
+.play{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:12px}
+.stage{display:flex;flex-direction:column;gap:10px;min-height:0;min-width:0}
+.trip{display:flex;align-items:center;gap:6px;overflow-x:auto;background:rgba(255,255,255,.72);border-radius:18px;padding:6px 8px;flex:none;scrollbar-width:none}
+.trip::-webkit-scrollbar{display:none}
+.tok{display:flex;align-items:center;gap:6px;background:#fff;border-radius:14px;padding:4px 10px;font-weight:900;font-size:clamp(14px,2.1vmin,24px);white-space:nowrap;border:4px solid transparent;flex:none}
+.tok svg{width:1.6em;height:1.6em}
+.tok .em{font-size:1.3em;line-height:1}
+.tok.now{border-color:var(--orange);background:#FFF1D6}
+.tok.past{opacity:.5}
+.arr{flex:none;width:22px;height:22px;color:#7A8594}
+.scene{flex:1;min-height:0;background:#fff;border-radius:var(--r);overflow:hidden;box-shadow:0 6px 0 rgba(31,42,68,.12);border:5px solid #fff}
+.scene svg{width:100%;height:100%}
+.scene{background:linear-gradient(#BFE6FF 50%,#5B6470 50%)}
+.scene.bg-inside{background:linear-gradient(#E3D6BC 50%,#B8AE9C 50%)}
+.scene.bg-reader{background:linear-gradient(#BFE6FF 50%,#8C95A3 50%)}
+.panel{display:flex;flex-direction:column;gap:12px;min-height:0;min-width:0}
+.guide{display:flex;align-items:center;gap:clamp(8px,1.6vmin,16px);background:#FFF6CC;border:4px solid #FFD966;border-radius:var(--r);padding:clamp(8px,1.4vmin,14px);flex:none}
+.speak{
+  flex:none;width:clamp(64px,10.5vmin,116px);height:clamp(64px,10.5vmin,116px);border-radius:50%;border:0;
+  background:var(--orange);color:#fff;box-shadow:0 5px 0 #C46F00;display:grid;place-items:center;
+}
+.speak svg{width:58%;height:58%}
+.speak:active{transform:translateY(3px);box-shadow:0 2px 0 #C46F00}
+.speak.talking{animation:talk 1s ease-in-out infinite}
+@keyframes talk{50%{box-shadow:0 5px 0 #C46F00,0 0 0 14px rgba(255,159,28,.35)}}
+.gpic{flex:none;width:clamp(60px,11vmin,130px);height:clamp(60px,11vmin,130px);background:#fff;border-radius:18px;padding:4px}
+.gpic svg{width:100%;height:100%}
+.gtext{margin:0;font-size:clamp(20px,3.5vmin,46px);font-weight:900;line-height:1.25;word-break:keep-all}
+.choices{flex:1;min-height:0;display:grid;gap:clamp(8px,1.8vmin,20px);grid-auto-rows:minmax(0,1fr);padding:10px 6px 14px}
+.choice{
+  border:0;border-radius:var(--r);background:#fff;box-shadow:0 7px 0 rgba(31,42,68,.18);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:10px;min-height:120px;min-width:0;
+  outline:0 solid transparent;transition:transform .08s, opacity .2s;
+}
+.choice:active{transform:translateY(4px);box-shadow:0 3px 0 rgba(31,42,68,.18)}
+.cpic{flex:0 1 auto;height:100%;max-height:min(340px,100%);min-height:0;width:100%;display:flex;align-items:center;justify-content:center}
+.cpic svg{width:100%;height:100%;max-width:300px}
+.clabel{font-size:clamp(18px,3vmin,40px);font-weight:900;word-break:keep-all;text-align:center;line-height:1.2}
+.choice.hint{animation:hint .9s ease-in-out infinite}
+@keyframes hint{
+  0%,100%{outline:9px solid #FFD400;outline-offset:3px;box-shadow:0 0 0 14px rgba(255,212,0,.5),0 7px 0 rgba(31,42,68,.18)}
+  50%{outline:9px solid rgba(255,212,0,.15);outline-offset:3px;box-shadow:0 0 0 0 rgba(255,212,0,0),0 7px 0 rgba(31,42,68,.18)}
+}
+.choice.correct{background:#C9F2DA;outline:8px solid var(--green);outline-offset:3px;animation:pop .4s ease}
+.choice.dim{opacity:.35}
+.choice.shake{animation:shake .45s ease}
+@keyframes shake{20%{transform:translateX(-12px)}40%{transform:translateX(12px)}60%{transform:translateX(-8px)}80%{transform:translateX(8px)}}
+@keyframes pop{50%{transform:scale(1.06)}}
+
+/* 끝 화면 */
+.finish{place-items:center;overflow:auto;padding:6px}
+.finCard{width:100%;max-width:1100px;display:grid;grid-template-columns:1.1fr 1fr;gap:20px;align-items:center}
+.finCard .heroPic svg{width:100%;height:auto}
+.finSide{display:flex;flex-direction:column;gap:16px;text-align:center}
+.finSide h1{margin:0;font-size:clamp(36px,7vmin,84px);font-weight:900}
+.stars{display:flex;justify-content:center;gap:8px}
+.stars svg{width:clamp(40px,8vmin,80px);height:auto}
+
+/* 팝업 */
+.overlay{position:fixed;inset:0;background:rgba(20,30,60,.55);display:none;align-items:center;justify-content:center;z-index:60;padding:14px}
+.overlay.show{display:flex}
+.pcard{
+  background:linear-gradient(#FFF8D6,#FFE39A);border-radius:36px;padding:clamp(14px,3.5vmin,40px);text-align:center;
+  width:min(92vw,680px);max-height:100%;overflow:auto;display:flex;flex-direction:column;align-items:center;gap:clamp(6px,1.6vmin,16px);
+  animation:rise .45s cubic-bezier(.2,1.4,.4,1) both;
+}
+@keyframes rise{from{transform:scale(.6);opacity:0}}
+.pstar svg{width:clamp(90px,22vmin,220px);height:auto;animation:spin 1.2s ease-out both}
+@keyframes spin{from{transform:rotate(-200deg) scale(.2)}}
+.pcard h2{margin:0;font-size:clamp(34px,7vmin,80px);font-weight:900;color:#D9480F}
+.pcard p{margin:0;font-size:clamp(18px,3vmin,32px);font-weight:900}
+.confetti{position:fixed;inset:0;pointer-events:none;z-index:61;overflow:hidden}
+.confetti i{position:absolute;top:-20px;width:14px;height:22px;border-radius:3px;animation:fall 2.2s linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+
+.toast{
+  position:fixed;left:50%;top:14%;transform:translateX(-50%);z-index:55;background:#fff;border:6px solid var(--orange);
+  border-radius:30px;padding:12px 26px;display:none;align-items:center;gap:14px;font-size:clamp(24px,4.6vmin,52px);font-weight:900;
+  box-shadow:0 10px 30px rgba(0,0,0,.2);white-space:nowrap;
+}
+.toast.show{display:flex;animation:rise .35s ease both}
+.toast svg{width:1.7em;height:1.7em}
+
+/* 설정 */
+.sheet{background:#fff;border-radius:28px;width:min(96vw,760px);max-height:100%;overflow:auto;padding:18px 20px;user-select:text;-webkit-user-select:text}
+.sheet h2{margin:0 0 4px;font-size:26px}
+.sheet .lead{margin:0 0 12px;color:#5B6478;font-weight:700;font-size:15px;line-height:1.5}
+.sgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.fld{background:#F1F6FC;border-radius:16px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.fld.wide{grid-column:1/-1}
+.fld b{font-size:15px}
+.fld small{color:#6B7486;font-weight:600}
+.fld .row{display:flex;gap:6px}
+.sheet input[type=text],.sheet select{font:inherit;font-size:18px;padding:8px 10px;border-radius:10px;border:2px solid #C6D3E3;min-width:0}
+.sheet input[type=text]{flex:1}
+.sheet select{width:78px;flex:none;font-size:22px}
+.chk{display:flex;align-items:center;gap:10px;font-weight:800;font-size:16px}
+.chk input{width:26px;height:26px}
+.sbtns{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;margin-top:14px}
+.sbtns button{border:0;border-radius:14px;padding:12px 18px;font-weight:900;font-size:17px;background:#E6ECF4}
+.sbtns .save{background:var(--green);color:#fff}
+.err{color:var(--red);font-weight:800;min-height:1.2em;margin:8px 0 0}
+
+/* 장면 애니메이션 */
+.anim-arrive{animation:arrive 1.8s cubic-bezier(.15,.75,.3,1) both}
+@keyframes arrive{from{transform:translateX(-900px)}}
+.scrolling{animation:scroll 5s linear infinite}
+@keyframes scroll{to{transform:translateX(-800px)}}
+.tapgo{animation:tapgo .9s ease-in-out both}
+@keyframes tapgo{to{transform:translate(-245px,22px)}}
+.blinkY{animation:blinkY .8s ease-in-out infinite}
+@keyframes blinkY{50%{opacity:.25}}
+.wave{transform-box:fill-box;transform-origin:center;animation:wave 1s ease-out infinite}
+@keyframes wave{from{opacity:1;transform:scale(.7)}to{opacity:0;transform:scale(1.5)}}
+.bounce{animation:bounce 1s ease-in-out infinite}
+@keyframes bounce{50%{transform:translateY(-14px)}}
+
+/* ---------- 세로 화면 ---------- */
+@media (orientation:portrait){
+  .play{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,.92fr) minmax(0,1.08fr)}
+  .startCard,.finCard{grid-template-columns:1fr}
+  .heroPic{max-width:560px;width:100%;justify-self:center}
+}
+@media (max-width:900px){
+  .steps li .st{display:none}
+  .steps li{flex:0 1 auto;justify-content:center;padding:4px}
+}
+@media (max-width:560px),(max-height:520px){
+  .tbtn{min-width:48px;height:48px;border-radius:14px}
+  .tbtn .tl{display:none}
+  .tbtn svg{width:26px;height:26px}
+  .steps{gap:4px}
+  .steps li{border-width:3px;border-radius:12px}
+  .steps li .si{width:28px;height:28px}
+  .choice{min-height:90px}
+  .sgrid{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-height:520px) and (orientation:landscape){
+  #app{gap:6px}
+  .trip{padding:3px 6px}
+  .guide{border-width:3px}
+}
+@media (prefers-reduced-motion:reduce){
+  .scrolling,.wave,.bounce{animation:none}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top home" id="top">
+    <button class="tbtn" id="homeBtn" aria-label="처음 화면"><span id="icHome"></span><span class="tl">처음</span></button>
+    <ol class="steps" id="steps"></ol>
+    <button class="tbtn" id="helpBtn" aria-label="도움 모드"><span id="icHelp"></span><span class="tl">도움</span></button>
+    <button class="tbtn on" id="soundBtn" aria-label="소리 켜기 끄기"><span id="icSound"></span><span class="tl">소리</span></button>
+    <button class="tbtn" id="setBtn" aria-label="선생님 설정"><span id="icGear"></span><span class="tl">설정</span></button>
+  </header>
+
+  <!-- 시작 -->
+  <section class="screen start show" id="startScreen">
+    <div class="startCard">
+      <div class="heroPic" id="heroPic"></div>
+      <div class="startSide">
+        <h1>버스 타기 연습<small>김해은혜학교</small></h1>
+        <div class="route" id="routeStart"></div>
+        <button class="go" id="startBtn"><span id="icPlay"></span>시작</button>
+        <p class="pickTitle">한 단계만 연습하기</p>
+        <div class="stepPick" id="stepPick"></div>
+        <p class="note" id="virtualNote"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 연습 -->
+  <section class="screen play" id="playScreen">
+    <div class="stage">
+      <div class="trip" id="trip"></div>
+      <div class="scene" id="scene"></div>
+    </div>
+    <div class="panel">
+      <div class="guide">
+        <button class="speak" id="speakBtn" aria-label="안내 다시 듣기"></button>
+        <div class="gpic" id="gpic"></div>
+        <p class="gtext" id="gtext"></p>
+      </div>
+      <div class="choices" id="choices"></div>
+    </div>
+  </section>
+
+  <!-- 끝 -->
+  <section class="screen finish" id="finishScreen">
+    <div class="finCard">
+      <div class="heroPic" id="finPic"></div>
+      <div class="finSide">
+        <h1 id="finTitle">도착했어요!</h1>
+        <div class="stars" id="finStars"></div>
+        <button class="go" id="againBtn"><span id="icAgain"></span>다시 하기</button>
+        <button class="go alt" id="homeBtn2"><span id="icHome2"></span>처음 화면</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- 칭찬 -->
+<div class="overlay" id="praise">
+  <div class="pcard">
+    <div class="pstar" id="pstar"></div>
+    <h2 id="ptext">참 잘했어요!</h2>
+    <p id="psub"></p>
+    <div class="stars" id="pstars"></div>
+    <button class="go" id="nextBtn"><span id="icNext"></span><b id="nextLabel">다음</b></button>
+  </div>
+</div>
+<div class="confetti" id="confetti"></div>
+<div class="toast" id="toast"></div>
+
+<!-- 설정 -->
+<div class="overlay" id="settings">
+  <form class="sheet" id="setForm" autocomplete="off">
+    <h2>선생님 설정</h2>
+    <p class="lead">김해 시내버스 노선도에 있는 정류장 이름과 버스 번호만 넣어 주세요. 그림은 학생이 정류장을 알아보는 표시예요. 저장하면 이 기기에만 저장돼요.</p>
+    <div class="sgrid">
+      <div class="fld"><b>① 타는 정류장</b><div class="row"><input type="text" name="startName" maxlength="14"><select name="startIcon"></select></div></div>
+      <div class="fld"><b>처음 탈 버스 번호</b><div class="row"><input type="text" name="bus1" maxlength="8"></div></div>
+      <div class="fld wide"><b>안내판에 같이 나올 다른 버스 (첫 정류장)</b><small>지도에 있는 번호만, 쉼표로 구분 (최대 2개). 비우면 갈아탈 버스 번호를 함께 보여줘요.</small><div class="row"><input type="text" name="others1"></div></div>
+      <div class="fld"><b>지나가는 정류장 (선택)</b><small>"아직 안 내려요" 연습용. 비우면 건너뜀</small><div class="row"><input type="text" name="passName" maxlength="14"><select name="passIcon"></select></div></div>
+      <div class="fld"><b>② 내릴 정류장 (갈아타는 곳)</b><small>첫 버스에서 내리는 곳</small><div class="row"><input type="text" name="transName" maxlength="14"><select name="transIcon"></select></div></div>
+      <div class="fld"><b>갈아탈 버스 번호</b><div class="row"><input type="text" name="bus2" maxlength="8"></div></div>
+      <div class="fld"><b>③ 마지막 도착 정류장</b><div class="row"><input type="text" name="endName" maxlength="14"><select name="endIcon"></select></div></div>
+      <div class="fld wide"><b>안내판에 같이 나올 다른 버스 (갈아타는 곳)</b><small>지도에 있는 번호만, 쉼표로 구분 (최대 2개). 비우면 첫 버스 번호를 함께 보여줘요.</small><div class="row"><input type="text" name="others2"></div></div>
+      <div class="fld wide">
+        <label class="chk"><input type="checkbox" name="tagOff"> 내릴 때도 카드 찍기 단계 넣기 (환승 연습)</label>
+        <label class="chk"><input type="checkbox" name="auto"> 화면이 바뀌면 안내를 자동으로 읽기</label>
+        <label class="chk"><input type="checkbox" name="shuffle"> 버튼 위치를 매번 섞기</label>
+        <label class="chk">읽기 속도 <input type="range" name="rate" min="0.6" max="1.2" step="0.1" style="flex:1"> <span id="rateVal"></span></label>
+        <small id="ttsInfo"></small>
+      </div>
+    </div>
+    <p class="err" id="setErr"></p>
+    <div class="sbtns">
+      <button type="button" id="voiceTest">목소리 들어보기</button>
+      <button type="button" id="resetBtn">가상 노선으로 되돌리기</button>
+      <button type="button" id="closeSet">닫기</button>
+      <button type="submit" class="save">저장</button>
+    </div>
+  </form>
+</div>
+
+<script>
+(()=>{
+'use strict';
+const $=s=>document.querySelector(s);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+
+/* ================= 설정 ================= */
+const KEY='eunhye-bus-practice-v1';
+const ICONS=['🏫','🛒','📚','🏥','🌳','🏠','🚉','🏪','🏢','🏛️','🏟️','⛪','🍽️','🚏'];
+const DEFAULT={
+  virtual:true,
+  start:{name:'학교 앞',icon:'🏫'}, bus1:'7', others1:'3, 25',
+  pass:{name:'도서관',icon:'📚'},
+  transfer:{name:'시장 앞',icon:'🛒'}, bus2:'12', others2:'9, 30',
+  end:{name:'공원',icon:'🌳'},
+  tagOff:true, auto:true, shuffle:true, rate:0.9
+};
+const clone=o=>JSON.parse(JSON.stringify(o));
+let saved={};
+try{saved=JSON.parse(localStorage.getItem(KEY))||{}}catch(e){saved={}}
+let cfg=Object.assign(clone(DEFAULT),saved.cfg||{});
+const S={step:0,task:0,busy:false,single:false,help:!!saved.help,sound:saved.sound!==false,done:new Set(),steps:[]};
+function persist(){try{localStorage.setItem(KEY,JSON.stringify({cfg,help:S.help,sound:S.sound}))}catch(e){}}
+
+const C1='#2E86DE', C2='#16A06A';
+
+/* ================= 그림 ================= */
+function fig(pose='stand',shirt='#FF7A59'){
+  const sk='#FFD3AE',hr='#3B2A20',pt='#3D5A99';
+  let legs,arms;
+  if(pose==='walk'){
+    legs=`<rect x="-5" y="-34" width="11" height="34" rx="5" fill="${pt}" transform="rotate(24 0 -32)"/><rect x="-5" y="-34" width="11" height="34" rx="5" fill="${pt}" transform="rotate(-24 0 -32)"/>`;
+    arms=`<rect x="-5" y="-64" width="10" height="32" rx="5" fill="${shirt}" transform="rotate(34 0 -62)"/><rect x="-5" y="-64" width="10" height="32" rx="5" fill="${shirt}" transform="rotate(-34 0 -62)"/>`;
+  }else if(pose==='sit'){
+    legs=`<rect x="-14" y="-40" width="40" height="13" rx="6" fill="${pt}"/><rect x="15" y="-34" width="11" height="34" rx="5" fill="${pt}"/>`;
+    arms=`<rect x="-4" y="-64" width="10" height="30" rx="5" fill="${shirt}" transform="rotate(-50 0 -62)"/>`;
+  }else if(pose==='cheer'){
+    legs=`<rect x="-13" y="-34" width="11" height="34" rx="5" fill="${pt}"/><rect x="2" y="-34" width="11" height="34" rx="5" fill="${pt}"/>`;
+    arms=`<rect x="-24" y="-98" width="10" height="36" rx="5" fill="${shirt}" transform="rotate(-28 -19 -64)"/><rect x="14" y="-98" width="10" height="36" rx="5" fill="${shirt}" transform="rotate(28 19 -64)"/>`;
+  }else if(pose==='hold'){
+    legs=`<rect x="-13" y="-34" width="11" height="34" rx="5" fill="${pt}"/><rect x="2" y="-34" width="11" height="34" rx="5" fill="${pt}"/>`;
+    arms=`<rect x="-25" y="-64" width="10" height="32" rx="5" fill="${shirt}"/><rect x="14" y="-100" width="10" height="38" rx="5" fill="${shirt}"/>`;
+  }else{
+    legs=`<rect x="-13" y="-34" width="11" height="34" rx="5" fill="${pt}"/><rect x="2" y="-34" width="11" height="34" rx="5" fill="${pt}"/>`;
+    arms=`<rect x="-25" y="-64" width="10" height="32" rx="5" fill="${shirt}"/><rect x="15" y="-64" width="10" height="32" rx="5" fill="${shirt}"/>`;
+  }
+  const body=`<rect x="-16" y="-68" width="32" height="40" rx="12" fill="${shirt}"/><rect x="-20" y="-64" width="8" height="26" rx="4" fill="#FFB020"/>`;
+  const head=`<circle cx="0" cy="-84" r="16" fill="${sk}"/><path d="M-16 -86a16 16 0 0 1 32 0q-6-7-16-6q-10-1-16 6z" fill="${hr}"/><circle cx="-5.5" cy="-83" r="2.3" fill="#1F2A44"/><circle cx="5.5" cy="-83" r="2.3" fill="#1F2A44"/><path d="M-5 -77q5 4 10 0" stroke="#1F2A44" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="-10" cy="-78" r="3" fill="#FF9AA2" opacity=".6"/><circle cx="10" cy="-78" r="3" fill="#FF9AA2" opacity=".6"/>`;
+  return legs+body+arms+head;
+}
+function numSize(n,base){const L=String(n).length;return L<=2?base:L<=3?base*.82:L<=4?base*.68:base*.55}
+
+function busFrontG(num,color){
+  return `<rect x="10" y="8" width="100" height="108" rx="18" fill="${color}"/>
+  <rect x="17" y="14" width="86" height="32" rx="6" fill="#111"/>
+  <text x="60" y="39" text-anchor="middle" font-size="${numSize(num,27)}" font-weight="900" fill="#FFB020">${esc(num)}</text>
+  <rect x="17" y="51" width="86" height="38" rx="8" fill="#BFE7FF"/>
+  <path d="M24 56 l14 0 -10 26z" fill="#fff" opacity=".6"/>
+  <circle cx="28" cy="101" r="7" fill="#FFF3A0" stroke="#fff" stroke-width="2"/><circle cx="92" cy="101" r="7" fill="#FFF3A0" stroke="#fff" stroke-width="2"/>
+  <rect x="44" y="97" width="32" height="8" rx="4" fill="#fff" opacity=".7"/>
+  <rect x="16" y="114" width="18" height="14" rx="4" fill="#333"/><rect x="86" y="114" width="18" height="14" rx="4" fill="#333"/>`;
+}
+function busGlyph(cx,cy,s=1){
+  return `<g transform="translate(${cx},${cy}) scale(${s})"><rect x="-22" y="-22" width="44" height="38" rx="8" fill="#fff"/><rect x="-16" y="-15" width="32" height="14" rx="3" fill="#2E86DE"/><circle cx="-12" cy="17" r="6" fill="#fff"/><circle cx="12" cy="17" r="6" fill="#fff"/><circle cx="-12" cy="17" r="3" fill="#2E86DE"/><circle cx="12" cy="17" r="3" fill="#2E86DE"/></g>`;
+}
+/* 버스 옆모습: 오른쪽이 앞. 0~500 x 0~215 */
+function busSide(num,color,o={}){
+  const door=(dx,key)=>{
+    const hl=o.hl===key, col=o.good?'#21B573':'#FFD400';
+    const body=o.open
+      ?`<rect x="${dx}" y="62" width="56" height="128" fill="#2B3445"/><rect x="${dx}" y="62" width="10" height="128" fill="#9ED8F5" stroke="#4A5568" stroke-width="2"/><rect x="${dx+46}" y="62" width="10" height="128" fill="#9ED8F5" stroke="#4A5568" stroke-width="2"/><rect x="${dx+12}" y="170" width="32" height="8" fill="#5B6470"/>`
+      :`<rect x="${dx}" y="62" width="56" height="128" rx="4" fill="#9ED8F5" stroke="#4A5568" stroke-width="3"/><line x1="${dx+28}" y1="62" x2="${dx+28}" y2="190" stroke="#4A5568" stroke-width="3"/>`;
+    const ring=hl?`<rect class="${o.good?'':'blinkY'}" x="${dx-7}" y="55" width="70" height="142" rx="10" fill="none" stroke="${col}" stroke-width="9"/>`:'';
+    return body+ring;
+  };
+  return `<rect x="22" y="6" width="440" height="22" rx="10" fill="${color}"/>
+  <rect x="0" y="20" width="500" height="172" rx="28" fill="${color}"/>
+  <rect x="0" y="150" width="500" height="16" fill="rgba(0,0,0,.14)"/>
+  <rect x="22" y="40" width="76" height="70" rx="8" fill="#BFE7FF"/><rect x="106" y="40" width="80" height="70" rx="8" fill="#BFE7FF"/>
+  <rect x="266" y="40" width="70" height="70" rx="8" fill="#BFE7FF"/><rect x="342" y="66" width="70" height="44" rx="8" fill="#BFE7FF"/>
+  <rect x="342" y="28" width="70" height="32" rx="5" fill="#111"/><text x="377" y="53" text-anchor="middle" font-size="${numSize(num,26)}" font-weight="900" fill="#FFB020">${esc(num)}</text>
+  <path d="M482 30 h4 q14 0 14 18 v80 h-18z" fill="#BFE7FF"/>
+  <rect x="26" y="118" width="96" height="46" rx="10" fill="#fff"/><text x="74" y="155" text-anchor="middle" font-size="${numSize(num,38)}" font-weight="900" fill="${color}">${esc(num)}</text>
+  ${door(200,'rear')}${door(420,'front')}
+  <rect x="486" y="150" width="12" height="12" rx="3" fill="#FFF3A0"/>
+  <circle cx="110" cy="192" r="26" fill="#2B2F3A"/><circle cx="110" cy="192" r="11" fill="#A0A8B3"/>
+  <circle cx="352" cy="192" r="26" fill="#2B2F3A"/><circle cx="352" cy="192" r="11" fill="#A0A8B3"/>`;
+}
+const W=(inner,bg='#E3F4FF')=>`<svg viewBox="0 0 120 120" aria-hidden="true"><rect width="120" height="120" rx="18" fill="${bg}"/>${inner}</svg>`;
+const IC={
+  speaker:()=>`<svg viewBox="0 0 48 48"><path d="M7 18h8l11-9v30l-11-9H7z" fill="currentColor"/><path d="M32 16c3 2 5 5 5 8s-2 6-5 8M37 10c5 3 8 8 8 14s-3 11-8 14" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></svg>`,
+  mute:()=>`<svg viewBox="0 0 48 48"><path d="M7 18h8l11-9v30l-11-9H7z" fill="currentColor"/><path d="M33 18l10 12M43 18L33 30" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></svg>`,
+  home:()=>`<svg viewBox="0 0 48 48"><path d="M6 24 24 8l18 16" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 22v18h9V30h6v10h9V22" fill="currentColor"/></svg>`,
+  help:()=>`<svg viewBox="0 0 48 48"><rect x="6" y="6" width="36" height="36" rx="9" fill="none" stroke="#E0A800" stroke-width="5" stroke-dasharray="8 4"/><path d="M20 16v15l-4-3-3 3 9 9h10l3-12-9-3V16q0-3-3-3t-3 3z" fill="currentColor"/></svg>`,
+  gear:()=>`<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="14" fill="none" stroke="currentColor" stroke-width="8" stroke-dasharray="6 5"/><circle cx="24" cy="24" r="11" fill="none" stroke="currentColor" stroke-width="5"/></svg>`,
+  play:()=>`<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="21" fill="#fff"/><path d="M19 14l15 10-15 10z" fill="#21B573"/></svg>`,
+  next:()=>`<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="21" fill="#fff"/><path d="M14 24h18M24 15l9 9-9 9" stroke="#21B573" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  again:()=>`<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="21" fill="#fff"/><path d="M33 18a11 11 0 1 0 2 9" stroke="#21B573" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M27 17h8v-8" stroke="#21B573" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  arrow:()=>`<svg class="arr" viewBox="0 0 24 24"><path d="M4 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  star:(on=true)=>`<svg viewBox="0 0 100 100"><path d="M50 6l13 28 30 4-22 21 6 30-27-15-27 15 6-30L7 38l30-4z" fill="${on?'#FFC81E':'#E3E7EE'}" stroke="${on?'#E08A00':'#C5CCD8'}" stroke-width="5" stroke-linejoin="round"/>${on?'<circle cx="38" cy="50" r="4" fill="#7A4A00"/><circle cx="62" cy="50" r="4" fill="#7A4A00"/><path d="M40 62q10 9 20 0" stroke="#7A4A00" stroke-width="4" fill="none" stroke-linecap="round"/>':''}</svg>`,
+  think:()=>`<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="#FFD84D" stroke="#E0A800" stroke-width="4"/><circle cx="36" cy="44" r="6" fill="#1F2A44"/><circle cx="64" cy="44" r="6" fill="#1F2A44"/><path d="M38 70q12-8 24 0" stroke="#1F2A44" stroke-width="5" fill="none" stroke-linecap="round"/><text x="78" y="30" font-size="30" font-weight="900" fill="#FF7A00">?</text></svg>`,
+  board:()=>W(`<rect x="18" y="8" width="6" height="18" fill="#8895A7"/><rect x="96" y="8" width="6" height="18" fill="#8895A7"/><rect x="8" y="22" width="104" height="82" rx="12" fill="#1E2433"/>${[36,58,80].map(y=>`<rect x="18" y="${y}" width="24" height="14" rx="3" fill="#FFB020"/><rect x="62" y="${y}" width="40" height="14" rx="3" fill="#7CF29A"/>`).join('')}`),
+  phone:()=>W(`<path d="M22 76q-4 26 22 40h36q10-12 4-34z" fill="#FFD3AE"/><rect x="36" y="8" width="50" height="94" rx="10" fill="#2B2F3A"/><rect x="41" y="17" width="40" height="72" rx="4" fill="#7B61FF"/><circle cx="53" cy="38" r="7" fill="#FFD400"/><rect x="60" y="56" width="15" height="15" rx="3" fill="#FF6FA8"/><circle cx="61" cy="95" r="3" fill="#888"/>`),
+  stopSign:()=>W(`<rect y="92" width="120" height="28" fill="#EBD9B4"/><rect x="56" y="40" width="8" height="56" fill="#7A8594"/><circle cx="60" cy="40" r="30" fill="#2E86DE" stroke="#fff" stroke-width="5"/>${busGlyph(60,40,.8)}`),
+  waitLine:()=>W(`<rect y="88" width="120" height="32" fill="#EBD9B4"/><rect y="104" width="120" height="7" fill="#FFD400"/><rect x="92" y="28" width="5" height="64" fill="#7A8594"/><circle cx="94" cy="28" r="15" fill="#2E86DE" stroke="#fff" stroke-width="3"/>${busGlyph(94,28,.42)}<g transform="translate(50,98) scale(.74)">${fig('stand')}</g>`),
+  roadOut:()=>W(`<rect y="58" width="120" height="12" fill="#EBD9B4"/><rect y="70" width="120" height="50" fill="#5B6470"/><line x1="0" y1="98" x2="120" y2="98" stroke="#fff" stroke-width="4" stroke-dasharray="12 8"/><g transform="translate(6,80)"><rect x="8" y="-12" width="24" height="12" rx="4" fill="#E8505B"/><rect width="42" height="18" rx="6" fill="#E8505B"/><circle cx="10" cy="19" r="5" fill="#222"/><circle cx="33" cy="19" r="5" fill="#222"/></g><g transform="translate(82,108) scale(.66)">${fig('walk','#7B61FF')}</g>`),
+  door:(which)=>{
+    const front=which==='front', hx=front?88:46;
+    const d=x=>`<rect x="${x}" y="48" width="16" height="46" rx="2" fill="${x===hx?'#FFD400':'#9ED8F5'}" stroke="${x===hx?'#C79C00':'#4A5568'}" stroke-width="2.5"/>`;
+    return W(`<rect y="98" width="120" height="22" fill="#5B6470"/><rect x="4" y="40" width="112" height="58" rx="12" fill="#2E86DE"/><rect x="12" y="48" width="28" height="22" rx="3" fill="#BFE7FF"/><rect x="66" y="48" width="18" height="22" rx="3" fill="#BFE7FF"/><path d="M106 46h4q4 0 4 6v24h-8z" fill="#BFE7FF"/>${d(46)}${d(88)}<rect x="108" y="84" width="6" height="6" rx="2" fill="#FFF3A0"/><circle cx="24" cy="98" r="9" fill="#2B2F3A"/><circle cx="74" cy="98" r="9" fill="#2B2F3A"/><path d="M${hx+8} 6v22M${hx-3} 18l11 11 11-11" stroke="#FF5A1F" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`);
+  },
+  card:()=>W(`<rect x="10" y="22" width="50" height="84" rx="10" fill="#3A4455"/><rect x="16" y="29" width="38" height="18" rx="3" fill="#21B573"/><rect x="16" y="54" width="38" height="44" rx="7" fill="#FFD400"/><path d="M30 66q5 10 0 20M37 62q8 14 0 28" stroke="#1F2A44" stroke-width="3" fill="none" stroke-linecap="round"/><g transform="rotate(-14 88 66)"><rect x="62" y="48" width="52" height="34" rx="6" fill="#FF6FA8" stroke="#fff" stroke-width="3"/><rect x="68" y="57" width="11" height="9" rx="2" fill="#FFE08A"/></g><path d="M66 90q-5-6 0-12" stroke="#FF5A1F" stroke-width="3.5" fill="none" stroke-linecap="round"/>`),
+  walkPast:()=>W(`<rect y="100" width="120" height="20" fill="#B8AE9C"/><rect x="10" y="28" width="30" height="58" rx="7" fill="#3A4455"/><rect x="15" y="34" width="20" height="12" rx="2" fill="#0E1726"/><rect x="15" y="54" width="20" height="26" rx="4" fill="#FFD400"/><g transform="translate(78,104) scale(.72)">${fig('walk','#7B61FF')}</g><path d="M44 52h14M40 66h18M44 80h14" stroke="#8A94A6" stroke-width="4" stroke-linecap="round"/>`),
+  seat:()=>W(`<rect y="104" width="120" height="16" fill="#B8AE9C"/><line x1="96" y1="0" x2="96" y2="18" stroke="#8A94A6" stroke-width="3"/><circle cx="96" cy="24" r="7" fill="none" stroke="#8A94A6" stroke-width="4"/><rect x="18" y="38" width="36" height="58" rx="10" fill="#3D7BD9"/><rect x="14" y="82" width="64" height="16" rx="7" fill="#2E5FAF"/><g transform="translate(42,110) scale(.64)">${fig('sit','#FF7A59')}</g>`),
+  wander:()=>W(`<rect y="104" width="120" height="16" fill="#B8AE9C"/><line x1="30" y1="0" x2="20" y2="20" stroke="#8A94A6" stroke-width="3"/><circle cx="18" cy="25" r="7" fill="none" stroke="#8A94A6" stroke-width="4"/><g transform="translate(66,106) rotate(14) scale(.72)">${fig('walk','#7B61FF')}</g><path d="M22 56h18M16 70h22M22 84h18" stroke="#8A94A6" stroke-width="4" stroke-linecap="round"/>`),
+  bell:()=>W(`<rect x="52" y="0" width="16" height="120" fill="#F2C200"/><rect x="30" y="36" width="60" height="54" rx="12" fill="#FFD400" stroke="#C79C00" stroke-width="4"/><circle cx="60" cy="63" r="18" fill="#E8505B" stroke="#fff" stroke-width="4"/><path d="M98 48q9 15 0 30M106 40q15 23 0 46M22 48q-9 15 0 30M14 40q-15 23 0 46" stroke="#E8505B" stroke-width="4" fill="none" stroke-linecap="round"/>`),
+  wait:()=>W(`<rect x="32" y="12" width="56" height="9" rx="4" fill="#8A5A2B"/><rect x="32" y="99" width="56" height="9" rx="4" fill="#8A5A2B"/><path d="M40 21h40q0 26-20 39q20 13 20 39H40q0-26 20-39q-20-13-20-39z" fill="#fff" stroke="#8A5A2B" stroke-width="4"/><path d="M47 29h26q-3 14-13 22q-10-8-13-22z" fill="#FFB020"/><path d="M44 97q16-20 32 0z" fill="#FFB020"/><circle cx="60" cy="68" r="2.5" fill="#FFB020"/>`),
+  exitWalk:()=>W(`<rect y="104" width="120" height="16" fill="#EBD9B4"/><rect x="8" y="14" width="50" height="92" rx="4" fill="#2B3445"/><rect x="8" y="14" width="8" height="92" fill="#9ED8F5"/><rect x="50" y="14" width="8" height="92" fill="#9ED8F5"/><g transform="translate(84,106) scale(.72)">${fig('walk','#7B61FF')}</g><path d="M60 40h16M62 56h12" stroke="#8A94A6" stroke-width="4" stroke-linecap="round"/>`),
+  transfer:()=>W(`<g transform="translate(4,40) scale(.42)">${busFrontG('',C1)}</g><g transform="translate(66,40) scale(.42)">${busFrontG('',C2)}</g><path d="M30 34q30-30 60 0" stroke="#FF5A1F" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M80 22l11 13-16 3" stroke="#FF5A1F" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`),
+  busGeneric:()=>W(`<g transform="translate(17,8) scale(.72)">${busFrontG('',C1)}</g>`),
+  busNum:(n,c)=>`<svg viewBox="0 0 120 132" aria-hidden="true">${busFrontG(n,c)}</svg>`,
+  stopPic:(st)=>W(`<text x="60" y="80" text-anchor="middle" font-size="62">${st.icon}</text>`,'#FFF1D6')
+};
+const STEP_ICON=[IC.board,IC.busGeneric,IC.card,IC.bell,IC.transfer];
+const STEP_NAME=['기다리기','버스 타기','카드 찍기','내리기','갈아타기'];
+
+/* ---------- 장면 ---------- */
+const SV=(inner,bg='stop')=>`<svg viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet" data-bg="${bg}" aria-hidden="true">${inner}</svg>`;
+const sky=()=>`<rect width="800" height="500" fill="#BFE6FF"/><g fill="#fff" opacity=".9"><ellipse cx="110" cy="66" rx="52" ry="20"/><ellipse cx="152" cy="54" rx="40" ry="22"/><ellipse cx="660" cy="36" rx="46" ry="16"/></g><g opacity=".5"><rect x="0" y="170" width="90" height="170" fill="#9CC3E6"/><rect x="100" y="128" width="70" height="212" fill="#A9D3C2"/><rect x="180" y="190" width="110" height="150" fill="#F2C4A0"/><rect x="300" y="150" width="80" height="190" fill="#B7B3E8"/></g>`;
+const ground=()=>`<rect y="335" width="800" height="68" fill="#EBD9B4"/><rect y="380" width="800" height="10" fill="#FFD400"/><rect y="400" width="800" height="8" fill="#A0A8B3"/><rect y="408" width="800" height="92" fill="#5B6470"/><line x1="0" y1="462" x2="800" y2="462" stroke="#fff" stroke-width="6" stroke-dasharray="40 30"/>`;
+function stopSign(x,st){
+  const label=`${st.icon} ${st.name}`, fs=Math.min(28,Math.floor(330/Math.max(4,label.length)));
+  return `<rect x="${x-5}" y="110" width="10" height="270" fill="#7A8594"/><circle cx="${x}" cy="104" r="42" fill="#2E86DE" stroke="#fff" stroke-width="6"/>${busGlyph(x,106,1.1)}
+  <rect x="${x-100}" y="158" width="200" height="50" rx="12" fill="#fff" stroke="#2E86DE" stroke-width="5"/><text x="${x}" y="${192}" text-anchor="middle" font-size="${fs}" font-weight="900" fill="#1F2A44">${esc(label)}</text>`;
+}
+function sceneStop(o){
+  const rows=o.rows, bh=58+rows.length*44;
+  const rs=rows.map((r,i)=>{const y=156+i*44,hl=o.focus&&r.mine;return `${hl?`<rect x="502" y="${y-32}" width="236" height="42" rx="7" fill="#FFD400"/>`:''}<text x="518" y="${y}" font-size="${numSize(r.num,30)}" font-weight="900" fill="${hl?'#1F2A44':'#FFB020'}">${esc(r.num)}</text><text x="726" y="${y}" text-anchor="end" font-size="24" font-weight="800" fill="${hl?'#1F2A44':'#7CF29A'}">${esc(r.msg)}</text>`}).join('');
+  const person=`<g transform="translate(330,376) scale(1.25)">${fig('stand')}</g>`;
+  const bus=o.bus?`<g transform="translate(-10,262) scale(.86)"><g class="${o.bus.anim?'anim-arrive':''}">${busSide(o.bus.num,o.bus.color,{open:o.bus.open})}</g></g>`:'';
+  return SV(`${sky()}${ground()}
+  <rect x="470" y="60" width="300" height="24" rx="6" fill="#2E86DE"/><rect x="482" y="84" width="8" height="296" fill="#7A8594"/><rect x="750" y="84" width="8" height="296" fill="#7A8594"/><rect x="490" y="84" width="260" height="292" fill="#E8F6FF" opacity=".55"/>
+  <rect x="560" y="322" width="150" height="12" rx="4" fill="#C47A3A"/><rect x="570" y="334" width="8" height="42" fill="#7A8594"/><rect x="692" y="334" width="8" height="42" fill="#7A8594"/>
+  <rect x="494" y="96" width="252" height="${bh}" rx="10" fill="#1E2433"/>${o.focus?`<rect class="blinkY" x="490" y="92" width="260" height="${bh+8}" rx="13" fill="none" stroke="#FFD400" stroke-width="7"/>`:''}
+  <text x="620" y="122" text-anchor="middle" font-size="19" font-weight="800" fill="#fff">도착 안내</text>${rs}
+  ${stopSign(200,o.stop)}${person}${bus}`);
+}
+function sceneTicket(num,color){
+  const fs=numSize(num,120);
+  return SV(`${sky()}${ground()}<rect x="150" y="34" width="500" height="330" rx="32" fill="#fff" stroke="${color}" stroke-width="10"/>
+  <text x="400" y="92" text-anchor="middle" font-size="38" font-weight="900" fill="#1F2A44">🚌 내가 탈 버스</text>
+  <g transform="translate(190,112) scale(1.75)">${busFrontG(num,color)}</g>
+  <text x="${num.length>3?500:520}" y="270" text-anchor="middle" font-size="${fs}" font-weight="900" fill="${color}">${esc(num)}</text><text x="${num.length>3?500:520}" y="330" text-anchor="middle" font-size="40" font-weight="900" fill="#1F2A44">번</text>`);
+}
+function sceneDoors(num,color,o={}){
+  const tag=(x,t,on)=>`<g><rect x="${x-62}" y="62" width="124" height="54" rx="14" fill="${on?(o.good?'#21B573':'#FFD400'):'#fff'}" stroke="#1F2A44" stroke-width="3"/><text x="${x}" y="100" text-anchor="middle" font-size="30" font-weight="900" fill="#1F2A44">${t}</text><path d="M${x} 118v14" stroke="#1F2A44" stroke-width="4"/></g>`;
+  return SV(`${sky()}${ground()}<g transform="translate(40,140) scale(1.42)">${busSide(num,color,o)}</g>${tag(364,'뒷문',o.hl==='rear')}${tag(676,'앞문',o.hl==='front')}`);
+}
+function sceneReader(o){
+  const lab={board:'앞문 단말기',exit:'뒷문 단말기',transfer:'앞문 단말기'}[o.mode];
+  return SV(`<rect width="800" height="500" fill="#DCE3EC"/><rect width="800" height="150" fill="#BFE6FF"/><g stroke="#8A94A6" stroke-width="10"><line x1="0" y1="150" x2="800" y2="150"/><line x1="230" y1="0" x2="230" y2="150"/><line x1="570" y1="0" x2="570" y2="150"/></g>
+  <rect y="440" width="800" height="60" fill="#8C95A3"/><rect x="383" y="0" width="14" height="500" fill="#F2C200"/>
+  <rect x="300" y="64" width="180" height="40" rx="10" fill="#fff"/><text x="390" y="92" text-anchor="middle" font-size="22" font-weight="900" fill="#1F2A44">${lab}</text>
+  <rect x="290" y="120" width="200" height="290" rx="26" fill="#3A4455" stroke="#232A36" stroke-width="6"/>
+  <rect id="rdScreen" x="310" y="140" width="160" height="78" rx="10" fill="#0E1726"/>
+  <text id="rdText" x="390" y="188" text-anchor="middle" font-size="20" font-weight="900" fill="#7CF29A">카드를 대 주세요</text>
+  <rect x="318" y="236" width="144" height="152" rx="18" fill="#FFD400"/>
+  <g fill="none" stroke="#1F2A44" stroke-width="7" stroke-linecap="round"><path d="M372 292q12 20 0 40"/><path d="M390 282q20 30 0 60"/><path d="M408 272q28 40 0 80"/></g>
+  <g id="rdWaves" opacity="0"><circle class="wave" cx="390" cy="312" r="90" fill="none" stroke="#21B573" stroke-width="8"/></g>
+  <g transform="translate(560,240)"><g id="cardG"><rect x="96" y="44" width="120" height="70" rx="30" fill="#FFD3AE"/><rect x="0" y="0" width="150" height="96" rx="12" fill="#FF6FA8" stroke="#fff" stroke-width="5"/><rect x="18" y="28" width="30" height="24" rx="4" fill="#FFE08A"/><text x="80" y="82" text-anchor="middle" font-size="18" font-weight="900" fill="#fff">교통카드</text><rect x="110" y="64" width="44" height="22" rx="11" fill="#FFD3AE"/></g></g>`,'reader');
+}
+function scenery(off){
+  let s=`<g transform="translate(${off},0)">`;
+  [[20,150,70,'#9CC3E6'],[250,170,90,'#F2C4A0'],[480,140,60,'#B7B3E8'],[640,175,100,'#A9D3C2']].forEach(([x,y,w,c])=>s+=`<rect x="${x}" y="${y}" width="${w}" height="${260-y}" fill="${c}"/>`);
+  [130,370,580,770].forEach(x=>s+=`<rect x="${x-5}" y="200" width="10" height="60" fill="#8A5A2B"/><circle cx="${x}" cy="196" r="28" fill="#4CB86A"/>`);
+  return s+'</g>';
+}
+function sceneInside(o){
+  const nx=o.next, label=`${nx.icon} ${nx.name}`, fs=Math.min(40,Math.floor(380/Math.max(4,label.length)));
+  const dl=`${o.dest.icon} ${o.dest.name}`, dfs=Math.min(34,Math.floor(300/Math.max(4,dl.length)));
+  let seats='';for(let i=0;i<4;i++){const x=24+i*196;seats+=`<rect x="${x}" y="300" width="150" height="110" rx="20" fill="#3D7BD9"/><rect x="${x-6}" y="396" width="162" height="40" rx="14" fill="#2E5FAF"/>`}
+  const straps=[110,400,690].map(x=>`<line x1="${x}" y1="96" x2="${x}" y2="128" stroke="#8A94A6" stroke-width="4"/><circle cx="${x}" cy="138" r="11" fill="none" stroke="#8A94A6" stroke-width="5"/>`).join('');
+  return SV(`<defs><clipPath id="wc"><rect x="20" y="112" width="240" height="150" rx="14"/><rect x="280" y="112" width="240" height="150" rx="14"/><rect x="540" y="112" width="240" height="150" rx="14"/></clipPath></defs>
+  <rect width="800" height="500" fill="#F3EAD7"/><rect width="800" height="96" fill="#E3D6BC"/>
+  <g clip-path="url(#wc)"><rect x="0" y="112" width="800" height="150" fill="#BFE6FF"/><g class="${o.moving?'scrolling':''}">${scenery(0)}${scenery(800)}</g></g>
+  <g fill="none" stroke="#8A7F6A" stroke-width="8"><rect x="20" y="112" width="240" height="150" rx="14"/><rect x="280" y="112" width="240" height="150" rx="14"/><rect x="540" y="112" width="240" height="150" rx="14"/></g>
+  ${straps}${seats}<rect y="440" width="800" height="60" fill="#B8AE9C"/>
+  <rect x="268" y="96" width="12" height="404" fill="#F2C200"/><rect x="522" y="96" width="12" height="404" fill="#F2C200"/>
+  <g><rect x="500" y="270" width="56" height="58" rx="10" fill="#FFD400" stroke="#C79C00" stroke-width="4"/><circle cx="528" cy="299" r="17" fill="${o.bell?'#FF2D3D':'#E8505B'}" stroke="#fff" stroke-width="4"/>${o.bell?`<circle class="wave" cx="528" cy="299" r="30" fill="none" stroke="#FF2D3D" stroke-width="6"/>`:''}</g>
+  <rect x="190" y="10" width="420" height="82" rx="12" fill="#111"/>
+  ${o.bell?`<text class="blinkY" x="400" y="40" text-anchor="middle" font-size="22" font-weight="900" fill="#FF4D5A">● 정차합니다</text>`:`<text x="400" y="38" text-anchor="middle" font-size="20" font-weight="800" fill="#9BD3FF">다음 정류장</text>`}
+  <text x="400" y="80" text-anchor="middle" font-size="${fs}" font-weight="900" fill="#FFB020">${esc(label)}</text>
+  <rect x="14" y="380" width="250" height="104" rx="16" fill="#fff" stroke="#FF9F1C" stroke-width="6"/>
+  <text x="34" y="414" font-size="22" font-weight="900" fill="#E06A00">내릴 곳</text><text x="34" y="464" font-size="${dfs}" font-weight="900" fill="#1F2A44">${esc(dl)}</text>`,'inside');
+}
+function sceneFinish(st){
+  let conf='';const cs=['#FF6FA8','#FFD400','#21B573','#2E86DE','#FF9F1C'];
+  for(let i=0;i<26;i++)conf+=`<rect x="${(i*61)%780+10}" y="${(i*37)%200+10}" width="12" height="18" rx="3" fill="${cs[i%5]}" transform="rotate(${i*23} ${(i*61)%780+16} ${(i*37)%200+19})"/>`;
+  return `<svg viewBox="0 0 800 500" aria-hidden="true"><rect width="800" height="500" fill="#BFE6FF"/>${conf}<rect y="360" width="800" height="140" fill="#9ED98B"/>
+  <circle cx="160" cy="300" r="70" fill="#4CB86A"/><rect x="152" y="330" width="16" height="60" fill="#8A5A2B"/><circle cx="660" cy="290" r="80" fill="#4CB86A"/><rect x="652" y="330" width="16" height="60" fill="#8A5A2B"/>
+  <text x="400" y="190" text-anchor="middle" font-size="150">${st.icon}</text>
+  <g class="bounce"><g transform="translate(400,440) scale(1.6)">${fig('cheer')}</g></g></svg>`;
+}
+function heroSvg(){
+  return `<svg viewBox="0 0 800 500" aria-hidden="true">${sky()}${ground()}${stopSign(640,cfg.start)}<g transform="translate(30,250) scale(.95)">${busSide(cfg.bus1,C1,{open:true})}</g><g transform="translate(560,378) scale(1.3)">${fig('stand')}</g></svg>`;
+}
+
+/* ================= 소리 ================= */
+let actx=null;
+function ac(){try{if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume()}catch(e){}return actx}
+function tone(f,t0,d,type='sine',v=.25){
+  const a=ac();if(!a||!S.sound)return;
+  const o=a.createOscillator(),g=a.createGain(),t=a.currentTime+t0;
+  o.type=type;o.frequency.value=f;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  o.connect(g).connect(a.destination);o.start(t);o.stop(t+d+.05);
+}
+const SFX={
+  good(){tone(784,0,.16,'triangle');tone(1047,.12,.3,'triangle')},
+  wrong(){tone(392,0,.2,'triangle',.18);tone(330,.18,.32,'triangle',.18)},
+  fanfare(){[523,659,784,1047].forEach((f,i)=>tone(f,i*.12,.32,'triangle',.24));tone(1319,.52,.7,'sine',.2);tone(1047,.52,.7,'sine',.15)},
+  beep(){tone(1650,0,.14,'square',.1)},
+  bell(){tone(880,0,.45,'sine',.3);tone(698,.36,.7,'sine',.3)},
+  door(){const a=ac();if(!a||!S.sound)return;const n=Math.floor(a.sampleRate*.55),b=a.createBuffer(1,n,a.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,1.5);const s=a.createBufferSource();s.buffer=b;const f=a.createBiquadFilter();f.type='bandpass';f.frequency.value=1400;const g=a.createGain();g.gain.value=.35;s.connect(f).connect(g).connect(a.destination);s.start()}
+};
+
+const hasTTS='speechSynthesis' in window;
+let voices=[];
+function loadVoices(){if(hasTTS)voices=speechSynthesis.getVoices()}
+if(hasTTS){loadVoices();speechSynthesis.onvoiceschanged=loadVoices}
+function koVoice(){const ko=voices.filter(v=>/^ko/i.test(v.lang));return ko.find(v=>/Google|Natural|Online|Yuna|SunHi|Heami/i.test(v.name))||ko[0]||null}
+let speakToken=0;
+function speakP(text,delay=60){
+  return new Promise(res=>{
+    const my=++speakToken;let done=false;const btn=$('#speakBtn');
+    const fin=()=>{if(done)return;done=true;clearTimeout(t);if(my===speakToken)btn.classList.remove('talking');res()};
+    if(!S.sound||!hasTTS){setTimeout(fin,Math.min(2400,700+text.length*60));var t=0;return}
+    var t=setTimeout(fin,2000+text.length*230/cfg.rate);
+    try{speechSynthesis.cancel()}catch(e){}
+    const u=new SpeechSynthesisUtterance(text);u.lang='ko-KR';const v=koVoice();if(v)u.voice=v;u.rate=cfg.rate;u.pitch=1.08;
+    u.onend=fin;u.onerror=fin;btn.classList.add('talking');
+    setTimeout(()=>{if(my===speakToken)speechSynthesis.speak(u);else fin()},delay);
+  });
+}
+function stopSpeak(){speakToken++;if(hasTTS)try{speechSynthesis.cancel()}catch(e){};$('#speakBtn').classList.remove('talking')}
+
+/* ================= 단계 만들기 ================= */
+function others(list,target,alt){
+  let a=String(list||'').split(/[,\s/]+/).map(s=>s.trim()).filter(s=>s&&s!==target);
+  a=[...new Set(a)];if(!a.length&&alt&&alt!==target)a=[alt];return a.slice(0,2);
+}
+const ch=(label,pic,ok)=>({label,pic,ok:!!ok});
+function buildSteps(){
+  const c=cfg, st=c.start, tr=c.transfer, en=c.end, ps=c.pass;
+  const d1=others(c.others1,c.bus1,c.bus2), d2=others(c.others2,c.bus2,c.bus1);
+  const mins=['6분 후','11분 후'];
+  const rows1=[{num:c.bus1,msg:'3분 후',mine:true},...d1.map((n,i)=>({num:n,msg:mins[i]}))];
+  const rows2=[{num:c.bus2,msg:'곧 도착',mine:true},...d2.map((n,i)=>({num:n,msg:mins[i]}))];
+  const set=html=>setScene(html);
+  const busChoices=(target,decoys,color)=>[target,...decoys].map(n=>ch(`${n}번`,IC.busNum(n,color),n===target));
+  const readerTap=async(msg,speech)=>{
+    $('#cardG').classList.add('tapgo');await sleep(900);SFX.beep();
+    $('#rdScreen').setAttribute('fill','#21B573');const t=$('#rdText');t.textContent=msg;t.setAttribute('fill','#fff');t.setAttribute('font-size','28');
+    $('#rdWaves').setAttribute('opacity','1');await speakP(speech,300);
+  };
+  const steps=[];
+
+  /* 1. 정류장에서 기다리기 */
+  steps.push({tasks:[
+    {leg:0,pic:IC.board(),text:'도착 안내판을 봐요',
+     say:`여기는 ${st.name} 정류장이에요. 도착 안내판을 봐요.`,
+     scene:()=>sceneStop({stop:st,rows:rows1}),
+     choices:[ch('안내판 보기',IC.board(),1),ch('휴대폰 보기',IC.phone())],
+     after:async()=>{set(sceneStop({stop:st,rows:rows1,focus:1}));await speakP(`안내판에 ${c.bus1}번 버스가 있어요. 3분 뒤에 와요.`)}},
+    {leg:0,pic:IC.stopSign(),text:'어디에서 기다려요?',
+     say:'버스가 올 때까지 어디에서 기다릴까요?',
+     scene:()=>sceneStop({stop:st,rows:rows1,focus:1}),
+     choices:[ch('인도에서 기다리기',IC.waitLine(),1),ch('차도로 나가기',IC.roadOut())],
+     after:async()=>{
+       speakP('노란 선 뒤 인도에서 기다려요.');
+       const r=clone(rows1);for(const m of ['2분 후','1분 후','곧 도착']){await sleep(900);r[0].msg=m;set(sceneStop({stop:st,rows:r,focus:1}))}
+       await speakP(`곧 버스가 와요. 버스 번호를 잘 봐요.`);
+     }}
+  ]});
+
+  /* 2. 버스 번호 확인하고 앞문으로 타기 */
+  steps.push({tasks:[
+    {leg:0,pic:IC.busNum(c.bus1,C1),text:`${c.bus1}번 버스를 찾아요`,
+     say:`버스가 와요. 우리가 탈 버스는 ${c.bus1}번이에요. ${c.bus1}번 버스를 찾아요.`,
+     scene:()=>sceneTicket(c.bus1,C1),
+     choices:busChoices(c.bus1,d1,C1),shuffle:true,
+     after:async()=>{const r=clone(rows1);r[0].msg='도착';set(sceneStop({stop:st,rows:r,focus:1,bus:{num:c.bus1,color:C1,anim:1,open:1}}));await sleep(1700);SFX.door();await speakP(`${c.bus1}번 버스가 맞아요! 버스가 왔어요.`)}},
+    {leg:0,pic:IC.door('front'),text:'앞문으로 타요',
+     say:'버스는 앞문으로 타요. 어느 문으로 탈까요?',
+     scene:()=>sceneDoors(c.bus1,C1,{open:1}),
+     choices:[ch('앞문',IC.door('front'),1),ch('뒷문',IC.door('rear'))],
+     after:async()=>{set(sceneDoors(c.bus1,C1,{open:1,hl:'front',good:1}));await speakP('앞문으로 타요. 계단을 조심해요.')}}
+  ]});
+
+  /* 3. 교통카드 찍기 */
+  steps.push({tasks:[
+    {leg:1,pic:IC.card(),text:'교통카드를 찍어요',
+     say:'버스에 탔어요. 단말기에 교통카드를 대요.',
+     scene:()=>sceneReader({mode:'board'}),
+     choices:[ch('카드 찍기',IC.card(),1),ch('그냥 들어가기',IC.walkPast())],
+     after:()=>readerTap('감사합니다','삑! 카드를 찍었어요.')},
+    {leg:1,pic:IC.seat(),text:'버스가 출발해요',
+     say:'버스가 곧 출발해요. 어떻게 할까요?',
+     scene:()=>sceneInside({next:ps.name?ps:tr,dest:tr}),
+     choices:[ch('앉거나 손잡이 잡기',IC.seat(),1),ch('돌아다니기',IC.wander())],
+     after:async()=>{set(sceneInside({next:ps.name?ps:tr,dest:tr,moving:1}));await speakP('잘했어요. 자리에 앉거나 손잡이를 꽉 잡아요. 버스가 출발해요.')}}
+  ]});
+
+  /* 4. 하차벨 누르고 뒷문으로 내리기 */
+  const t4=[];
+  if(ps.name)t4.push({leg:1,pic:IC.stopPic(ps),text:'여기서 내려요?',
+     say:`다음 정류장은 ${ps.name}입니다. 우리가 내릴 곳일까요?`,
+     scene:()=>sceneInside({next:ps,dest:tr,moving:1}),
+     choices:[ch('아직 기다리기',IC.wait(),1),ch('하차벨 누르기',IC.bell())],
+     after:async()=>{await speakP(`아직 아니에요. 우리는 ${tr.name}에서 내려요. 조금 더 기다려요.`)}});
+  t4.push({leg:1,pic:IC.stopPic(tr),text:'여기서 내려요?',
+     say:`다음 정류장은 ${tr.name}입니다. 우리가 내릴 곳일까요?`,
+     scene:()=>sceneInside({next:tr,dest:tr,moving:1}),
+     choices:[ch('하차벨 누르기',IC.bell(),1),ch('아직 기다리기',IC.wait())],
+     after:async()=>{SFX.bell();set(sceneInside({next:tr,dest:tr,moving:1,bell:1}));await speakP('딩동! 하차벨을 눌렀어요. 버스가 멈출 때까지 기다려요.',700)}});
+  t4.push({leg:1,pic:IC.door('rear'),text:'뒷문으로 내려요',
+     say:'버스가 멈췄어요. 어느 문으로 내릴까요?',
+     scene:()=>sceneDoors(c.bus1,C1,{open:1}),
+     choices:[ch('뒷문',IC.door('rear'),1),ch('앞문',IC.door('front'))],
+     after:async()=>{set(sceneDoors(c.bus1,C1,{open:1,hl:'rear',good:1}));if(c.tagOff)await speakP('뒷문으로 가요.');else{SFX.door();await speakP('뒷문으로 내려요. 발밑을 조심해요.')}}});
+  if(c.tagOff)t4.push({leg:1,pic:IC.card(),text:'내릴 때도 카드를 찍어요',
+     say:'갈아타려면 내릴 때도 카드를 찍어요. 어떻게 할까요?',
+     scene:()=>sceneReader({mode:'exit'}),
+     choices:[ch('카드 찍기',IC.card(),1),ch('그냥 내리기',IC.exitWalk())],
+     after:async()=>{await readerTap('삑!','삑! 카드를 찍었어요.');SFX.door();await speakP('이제 뒷문으로 내려요. 발밑을 조심해요.')}});
+  steps.push({tasks:t4});
+
+  /* 5. 다른 버스로 갈아타기 */
+  steps.push({tasks:[
+    {leg:2,pic:IC.busNum(c.bus2,C2),text:`${c.bus2}번 버스를 찾아요`,
+     say:`여기는 ${tr.name} 정류장이에요. 이제 ${c.bus2}번 버스로 갈아타요. ${c.bus2}번 버스를 찾아요.`,
+     scene:()=>sceneStop({stop:tr,rows:rows2,focus:1}),
+     choices:busChoices(c.bus2,d2,C2),shuffle:true,
+     after:async()=>{const r=clone(rows2);r[0].msg='도착';set(sceneStop({stop:tr,rows:r,focus:1,bus:{num:c.bus2,color:C2,anim:1,open:1}}));await sleep(1700);SFX.door();await speakP(`${c.bus2}번 버스가 왔어요.`)}},
+    {leg:2,pic:IC.door('front'),text:'앞문으로 타요',
+     say:'어느 문으로 탈까요?',
+     scene:()=>sceneDoors(c.bus2,C2,{open:1}),
+     choices:[ch('앞문',IC.door('front'),1),ch('뒷문',IC.door('rear'))],
+     after:async()=>{set(sceneDoors(c.bus2,C2,{open:1,hl:'front',good:1}));await speakP('앞문으로 타요.')}},
+    {leg:3,pic:IC.card(),text:'교통카드를 찍어요',
+     say:'갈아탈 때도 교통카드를 찍어요.',
+     scene:()=>sceneReader({mode:'transfer'}),
+     choices:[ch('카드 찍기',IC.card(),1),ch('그냥 들어가기',IC.walkPast())],
+     after:()=>readerTap('환승입니다','삑! 환승입니다. 갈아타기 성공!')},
+    {leg:3,pic:IC.stopPic(en),text:'여기서 내려요?',
+     say:`다음 정류장은 ${en.name}입니다. 우리가 내릴 곳일까요?`,
+     scene:()=>sceneInside({next:en,dest:en,moving:1}),
+     choices:[ch('하차벨 누르기',IC.bell(),1),ch('아직 기다리기',IC.wait())],
+     after:async()=>{SFX.bell();set(sceneInside({next:en,dest:en,moving:1,bell:1}));await speakP('딩동! 하차벨을 눌렀어요.',700)}},
+    {leg:3,pic:IC.door('rear'),text:'뒷문으로 내려요',
+     say:'버스가 멈췄어요. 어느 문으로 내릴까요?',
+     scene:()=>sceneDoors(c.bus2,C2,{open:1}),
+     choices:[ch('뒷문',IC.door('rear'),1),ch('앞문',IC.door('front'))],
+     after:async()=>{set(sceneDoors(c.bus2,C2,{open:1,hl:'rear',good:1}));SFX.door();await speakP('뒷문으로 내려요. 발밑을 조심해요.')}}
+  ]});
+  return steps;
+}
+
+/* ================= 화면 ================= */
+function show(id){
+  ['startScreen','playScreen','finishScreen'].forEach(s=>$('#'+s).classList.toggle('show',s===id));
+  $('#top').classList.toggle('home',id!=='playScreen');
+}
+function routeTokens(cur=-1){
+  const c=cfg;
+  const toks=[
+    `<span class="tok"><span class="em">${c.start.icon}</span>${esc(c.start.name)}</span>`,
+    `<span class="tok">${IC.busNum(c.bus1,C1)}${esc(c.bus1)}번</span>`,
+    `<span class="tok"><span class="em">${c.transfer.icon}</span>${esc(c.transfer.name)}</span>`,
+    `<span class="tok">${IC.busNum(c.bus2,C2)}${esc(c.bus2)}번</span>`,
+    `<span class="tok"><span class="em">${c.end.icon}</span>${esc(c.end.name)}</span>`
+  ].map((t,i)=>cur<0?t:t.replace('class="tok"',`class="tok${i===cur?' now':i<cur?' past':''}"`));
+  return toks.join(IC.arrow());
+}
+function renderStart(){
+  $('#heroPic').innerHTML=heroSvg();
+  $('#routeStart').innerHTML=routeTokens();
+  $('#stepPick').innerHTML=STEP_NAME.map((n,i)=>`<button data-step="${i}">${STEP_ICON[i]()}<span>${i+1}. ${n}</span></button>`).join('');
+  $('#virtualNote').textContent=cfg.virtual
+    ?'지금은 가상 노선이에요. 오른쪽 위 [설정]에서 김해 시내버스 노선도의 정류장·버스 번호로 바꿀 수 있어요.'
+    :'선생님이 정한 노선으로 연습해요.';
+}
+function renderSteps(){
+  $('#steps').innerHTML=STEP_NAME.map((n,i)=>`<li class="${i===S.step?'now':''} ${S.done.has(i)?'done':''}"><span class="si">${STEP_ICON[i]()}</span><span class="st">${i+1}. ${n}</span></li>`).join('');
+}
+function setScene(html){const s=$('#scene');s.innerHTML=html;const bg=(s.firstElementChild&&s.firstElementChild.dataset.bg)||'stop';s.className='scene bg-'+bg}
+function cur(){return S.steps[S.step].tasks[S.task]}
+function renderTask(){
+  const tk=cur();
+  renderSteps();
+  $('#trip').innerHTML=routeTokens(tk.leg);
+  const nowTok=$('#trip .tok.now');if(nowTok)nowTok.scrollIntoView({block:'nearest',inline:'center'});
+  setScene(tk.scene());
+  $('#gpic').innerHTML=tk.pic;
+  $('#gtext').textContent=tk.text;
+  const list=cfg.shuffle?shuffle(tk.choices):tk.choices.slice();
+  const box=$('#choices');box.innerHTML='';
+  box.style.gridTemplateColumns=`repeat(${list.length},minmax(0,1fr))`;
+  list.forEach(c=>{
+    const b=document.createElement('button');b.className='choice';b.dataset.ok=c.ok?'1':'';
+    b.setAttribute('aria-label',c.label);
+    b.innerHTML=`<span class="cpic">${c.pic}</span><span class="clabel">${esc(c.label)}</span>`;
+    b.addEventListener('click',()=>choose(b,c));box.appendChild(b);
+  });
+  applyHelp();
+  S.busy=false;
+  if(cfg.auto)speakP(tk.say,250);
+}
+function applyHelp(){document.querySelectorAll('.choice').forEach(b=>{if(!b.dataset.forced)b.classList.toggle('hint',S.help&&b.dataset.ok==='1')})}
+let toastTimer=0;
+function toast(html,color){const t=$('#toast');t.innerHTML=html;t.style.borderColor=color||'var(--orange)';t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2200)}
+let lastWrong=0;
+async function choose(b,c){
+  if(S.busy)return;
+  if(!c.ok){
+    const now=Date.now();if(now-lastWrong<500)return;lastWrong=now;
+    b.classList.remove('shake');void b.offsetWidth;b.classList.add('shake');
+    SFX.wrong();toast(`${IC.think()}<span>다시 해 볼까요?</span>`);
+    const okb=$('#choices [data-ok="1"]');okb.dataset.forced='1';okb.classList.add('hint');
+    speakP('다시 해 볼까요? 반짝이는 버튼을 눌러 봐요.',350);
+    return;
+  }
+  S.busy=true;stopSpeak();
+  document.querySelectorAll('.choice').forEach(x=>{x.classList.remove('hint');if(x!==b)x.classList.add('dim')});
+  b.classList.add('correct');SFX.good();
+  try{if(cur().after)await cur().after()}catch(e){console.error(e)}
+  await sleep(300);
+  S.task++;
+  if(S.task>=S.steps[S.step].tasks.length)stepDone();else renderTask();
+}
+const PRAISE=['참 잘했어요!','최고예요!','멋져요!','정말 잘했어요!','훌륭해요!','대단해요!'];
+function starsHtml(){return STEP_NAME.map((_,i)=>IC.star(S.done.has(i))).join('')}
+function confetti(){
+  const box=$('#confetti');box.innerHTML='';const cs=['#FF6FA8','#FFD400','#21B573','#2E86DE','#FF9F1C','#7B61FF'];
+  for(let i=0;i<46;i++){const e=document.createElement('i');e.style.left=Math.random()*100+'vw';e.style.background=cs[i%cs.length];e.style.animationDelay=(Math.random()*.6)+'s';e.style.animationDuration=(1.6+Math.random()*1.4)+'s';box.appendChild(e)}
+  setTimeout(()=>box.innerHTML='',3600);
+}
+function stepDone(){
+  S.done.add(S.step);renderSteps();
+  const last=S.step===S.steps.length-1;
+  if(last&&!S.single){finish();return}
+  const p=pick(PRAISE),n=S.step+1;
+  $('#pstar').innerHTML=IC.star(true);
+  $('#ptext').textContent=p;
+  $('#psub').textContent=`${n}단계 「${STEP_NAME[S.step]}」 끝!`;
+  $('#pstars').innerHTML=starsHtml();
+  $('#nextLabel').textContent=S.single?'처음 화면':`${n+1}단계로`;
+  $('#icNext').innerHTML=S.single?IC.home():IC.next();
+  $('#praise').classList.add('show');
+  SFX.fanfare();confetti();
+  speakP(`${p} ${n}단계를 마쳤어요.`,900);
+}
+$('#nextBtn').addEventListener('click',()=>{
+  $('#praise').classList.remove('show');stopSpeak();
+  if(S.single){goHome();return}
+  S.step++;S.task=0;renderTask();
+});
+function finish(){
+  show('finishScreen');
+  $('#finPic').innerHTML=sceneFinish(cfg.end);
+  $('#finTitle').textContent=`${cfg.end.name} 도착!`;
+  $('#finStars').innerHTML=starsHtml();
+  SFX.fanfare();confetti();
+  speakP(`${cfg.end.name}에 도착했어요! 버스 타기를 모두 마쳤어요. 정말 잘했어요!`,900);
+}
+function begin(step,single){
+  ac();cfg=Object.assign(clone(DEFAULT),cfg);
+  S.steps=buildSteps();S.step=step;S.task=0;S.single=single;S.done=new Set();
+  show('playScreen');renderTask();
+}
+function goHome(){stopSpeak();$('#praise').classList.remove('show');show('startScreen');renderStart()}
+
+$('#startBtn').addEventListener('click',()=>begin(0,false));
+$('#stepPick').addEventListener('click',e=>{const b=e.target.closest('button');if(b)begin(+b.dataset.step,true)});
+$('#againBtn').addEventListener('click',()=>begin(0,false));
+$('#homeBtn').addEventListener('click',goHome);
+$('#homeBtn2').addEventListener('click',goHome);
+$('#speakBtn').addEventListener('click',()=>{ac();if(!S.sound){S.sound=true;syncTools();persist()}speakP(cur().say)});
+function syncTools(){
+  $('#helpBtn').classList.toggle('on',S.help);$('#helpBtn').setAttribute('aria-pressed',S.help);
+  $('#soundBtn').classList.toggle('on',S.sound);$('#soundBtn').classList.toggle('off',!S.sound);$('#soundBtn').setAttribute('aria-pressed',S.sound);
+  $('#icSound').innerHTML=S.sound?IC.speaker():IC.mute();
+}
+$('#helpBtn').addEventListener('click',()=>{S.help=!S.help;syncTools();applyHelp();persist();ac();if(S.help)tone(1047,0,.15,'triangle')});
+$('#soundBtn').addEventListener('click',()=>{S.sound=!S.sound;if(!S.sound)stopSpeak();syncTools();persist();if(S.sound){ac();SFX.good()}});
+
+/* ================= 설정 ================= */
+const F=$('#setForm');
+['startIcon','passIcon','transIcon','endIcon'].forEach(n=>{F[n].innerHTML=ICONS.map(i=>`<option>${i}</option>`).join('')});
+function openSettings(){
+  F.startName.value=cfg.start.name;F.startIcon.value=cfg.start.icon;F.bus1.value=cfg.bus1;F.others1.value=cfg.others1;
+  F.passName.value=cfg.pass.name;F.passIcon.value=cfg.pass.icon||'📚';
+  F.transName.value=cfg.transfer.name;F.transIcon.value=cfg.transfer.icon;F.bus2.value=cfg.bus2;F.others2.value=cfg.others2;
+  F.endName.value=cfg.end.name;F.endIcon.value=cfg.end.icon;
+  F.tagOff.checked=cfg.tagOff;F.auto.checked=cfg.auto;F.shuffle.checked=cfg.shuffle;F.rate.value=cfg.rate;$('#rateVal').textContent=cfg.rate;
+  $('#setErr').textContent='';
+  $('#ttsInfo').textContent=!hasTTS?'이 기기에서는 읽어주기(TTS)를 쓸 수 없어요. 효과음과 그림은 그대로 나와요.':(koVoice()?`읽어주는 목소리: ${koVoice().name}`:'한국어 목소리를 찾는 중이에요. 소리가 안 나면 기기 설정에서 한국어 음성(TTS)을 설치해 주세요.');
+  stopSpeak();$('#settings').classList.add('show');
+}
+$('#setBtn').addEventListener('click',openSettings);
+$('#closeSet').addEventListener('click',()=>$('#settings').classList.remove('show'));
+F.rate.addEventListener('input',()=>$('#rateVal').textContent=F.rate.value);
+$('#voiceTest').addEventListener('click',()=>{ac();const r=cfg.rate;cfg.rate=+F.rate.value;speakP(`${F.bus1.value.trim()||'7'}번 버스를 타요. 참 잘했어요!`).then(()=>cfg.rate=r)});
+$('#resetBtn').addEventListener('click',()=>{const keep={tagOff:cfg.tagOff,auto:cfg.auto,shuffle:cfg.shuffle,rate:cfg.rate};cfg=Object.assign(clone(DEFAULT),keep);persist();openSettings();renderStart()});
+F.addEventListener('submit',e=>{
+  e.preventDefault();
+  const v=n=>F[n].value.trim();
+  const need=[['startName','타는 정류장'],['bus1','처음 탈 버스'],['transName','내릴 정류장'],['bus2','갈아탈 버스'],['endName','마지막 도착 정류장']].filter(([n])=>!v(n));
+  if(need.length){$('#setErr').textContent=`비어 있어요: ${need.map(x=>x[1]).join(', ')}`;return}
+  if(v('bus1')===v('bus2')){$('#setErr').textContent='처음 탈 버스와 갈아탈 버스 번호가 같아요.';return}
+  const next={
+    virtual:false,
+    start:{name:v('startName'),icon:F.startIcon.value},bus1:v('bus1'),others1:v('others1'),
+    pass:{name:v('passName'),icon:F.passIcon.value},
+    transfer:{name:v('transName'),icon:F.transIcon.value},bus2:v('bus2'),others2:v('others2'),
+    end:{name:v('endName'),icon:F.endIcon.value},
+    tagOff:F.tagOff.checked,auto:F.auto.checked,shuffle:F.shuffle.checked,rate:+F.rate.value
+  };
+  const same=['start','pass','transfer','end'].every(k=>next[k].name===DEFAULT[k].name&&next[k].icon===DEFAULT[k].icon)&&['bus1','bus2','others1','others2'].every(k=>next[k]===DEFAULT[k]);
+  next.virtual=same;
+  cfg=next;persist();$('#settings').classList.remove('show');goHome();
+});
+
+/* ================= 시작 ================= */
+$('#icHome').innerHTML=IC.home();$('#icHelp').innerHTML=IC.help();$('#icGear').innerHTML=IC.gear();
+$('#icPlay').innerHTML=IC.play();$('#icAgain').innerHTML=IC.again();$('#icHome2').innerHTML=IC.home();
+$('#speakBtn').innerHTML=IC.speaker();
+syncTools();renderStart();renderSteps();
+})();
+</script>
+</body>
+</html>
