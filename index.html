@@ -562,8 +562,20 @@ let voices=[];
 function loadVoices(){if(hasTTS)voices=speechSynthesis.getVoices()}
 if(hasTTS){loadVoices();speechSynthesis.onvoiceschanged=loadVoices}
 function koVoice(){const ko=voices.filter(v=>/^ko/i.test(v.lang));return ko.find(v=>/Google|Natural|Online|Yuna|SunHi|Heami/i.test(v.name))||ko[0]||null}
+/* 버스 번호는 한자어로 읽기: 7번 → 칠 번 (일곱 번 X) */
+function sino(n){
+  n=String(n).replace(/^0+(?=\d)/,'');if(n==='0')return '영';
+  const D=['','일','이','삼','사','오','육','칠','팔','구'],U=['','십','백','천'];
+  const four=s=>{let r='';const L=s.length;for(let i=0;i<L;i++){const d=+s[i],p=L-1-i;if(!d)continue;r+=(d===1&&p>0?'':D[d])+U[p]}return r};
+  if(n.length<=4)return four(n);
+  const hi=n.slice(0,-4),lo=n.slice(-4);return (hi==='1'?'':four(hi))+'만'+four(lo);
+}
+function readNums(t){
+  return String(t).replace(/(\d+(?:-\d+)*)\s*번/g,(m,num)=>num.split('-').map(sino).join(' 다시 ')+'번');
+}
 let speakToken=0;
 function speakP(text,delay=60){
+  text=readNums(text);
   return new Promise(res=>{
     const my=++speakToken;let done=false;const btn=$('#speakBtn');
     const fin=()=>{if(done)return;done=true;clearTimeout(t);if(my===speakToken)btn.classList.remove('talking');res()};
